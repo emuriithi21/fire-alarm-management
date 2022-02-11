@@ -1,10 +1,10 @@
 {
-  "name": "cumulocity-runtime-widget",
+  "name": "fire-alarm-management-widget",
   "interleave": {
-    "dist\\bundle-src\\custom-widget.js": "cumulocity-runtime-widget-CustomWidget",
-    "dist/bundle-src/custom-widget.js": "cumulocity-runtime-widget-CustomWidget"
+    "dist\\bundle-src\\custom-widget.js": "fire-alarm-management-widget-CustomWidget",
+    "dist/bundle-src/custom-widget.js": "fire-alarm-management-widget-CustomWidget"
   },
-  "version": "0.0.0-development",
+  "version": "1.0.0-development",
   "description": "Template widget for runtime loading in Cumulocity using the cumulocity-runtime-widget-loader (written by Software AG Global Presales)",
   "scripts": {
     "build": "gulp"
@@ -13,6 +13,11 @@
   "author": "Richard Peach - Software AG, Global Presales",
   "license": "Apache 2.0",
   "dependencies": {
+    "@ng-bootstrap/ng-bootstrap": "^10.0.0",
+    "angular-countdown-timer": "0.0.1",
+    "bootstrap": "^4.5.0",
+    "ng-bootstrap": "^1.6.3",
+    "ngx-countdown": "^12.0.1"
   },
   "peerDependencies": {
     "@angular/common": "8.2.13",

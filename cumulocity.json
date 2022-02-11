@@ -1,7 +1,7 @@
 {
-  "name": "Runtime Loaded Widget",
-  "contextPath": "cumulocity-runtime-widget",
-  "key": "cumulocity-runtime-widget-application-key",
+  "name": "Fire Alarm Management Widget",
+  "contextPath": "fire-alarm-management-widget",
+  "key": "fire-alarm-management-widget-application-key",
   "contentSecurityPolicy": "default-src 'self'",
   "icon": {
     "class": "fa fa-puzzle-piece"

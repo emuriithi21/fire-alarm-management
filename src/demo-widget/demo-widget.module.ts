@@ -21,9 +21,9 @@ import '~styles/index.css';
             provide: HOOK_COMPONENTS,
             multi: true,
             useValue: {
-                id: 'acme.test.widget',
-                label: 'Test widget',
-                description: 'Displays some mirrored text',
+                id: 'acme.fam.widget',
+                label: 'Fire Alarm Management Widget',
+                description: 'Displays incoming fire alarm data ',
                 component: WidgetDemo,
                 configComponent: WidgetConfigDemo,
                 previewImage: require("~styles/previewImage.png"),
