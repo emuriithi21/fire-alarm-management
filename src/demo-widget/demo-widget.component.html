@@ -28,7 +28,7 @@ dd {
 
 <hr style = "margin-top: 2px; margin-bottom: 2px; color: black;"/>
 
-<div class="container " style="width:52rem; margin: 2rem;"  [ngClass]="{ 'collapse': alarm_active }">
+<div class="container " style="width:52rem; margin: 2rem;"  [ngClass]="{ 'collapse': active_alarms.length > 0 }">
   
 
   <div class="row d-flex justify-content-md-between" style="height: 5rem;">
@@ -39,22 +39,22 @@ dd {
     </div>
 </div>
 
-<div class="container " style="width:48rem; margin: 2rem;" id="alarm_full_body" [ngClass]="{ 'collapse': !alarm_active }">
+<div class="container " style="width:48rem; margin: 2rem;" id="alarm_full_body"  *ngFor="let alarm of active_alarms">
   
 
   <div class="row d-flex justify-content-md-between" style="height: 5rem;">
     <div class="col col-sm-5">
-      <p><strong>Residential Alarm </strong></p>
+      <p><strong>{{alarm.Name}} </strong></p>
       <h6>18 Nov 2021, 11:23:38 </h6>
     </div>
     
     <div class="col col-sm-3">
-      <h2 class="text-danger"><strong> {{remaining_time_string}} </strong></h2>
+      <h2 class="text-danger"><strong> {{alarm.Remaining_time_string}} </strong></h2>
     </div>
 
     <div class=" col col-sm-4">
       
-      <button type="button" class="btn btn-block btn-warning" (click)="dropdown_collapsed = !dropdown_collapsed">Verify </button>
+      <button type="button" class="btn btn-block btn-warning" (click)="alarm.Dropdown_active = !alarm.Dropdown_active; show_on_map(alarm);">Verify </button>
 
     </div>
 
@@ -64,13 +64,13 @@ dd {
   <hr style = "margin-top: 2px; margin-bottom: 2px; color: black;"/>
 
 
-  <div id="alarmbody" style="background-color: #fbfbfc;" [ngClass]="{ 'collapse': dropdown_collapsed }" >
+  <div id="alarmbody" style="background-color: #fbfbfc;" [ngClass]="{ 'collapse': !alarm.Dropdown_active }" >
   <div class="modal-header row">
     <div class="col col-sm-9">
-    <h4 class="modal-title" id="modal-title"><strong> Makani 35643-55412</strong></h4>
+    <h4 class="modal-title" id="modal-title"><strong> {{alarm.Makani}}</strong></h4>
     </div>
     <div class="col col-sm-3">
-    <button type="button" class="close" aria-describedby="modal-title" (click)="dropdown_collapsed = !dropdown_collapsed">
+    <button type="button" class="close" aria-describedby="modal-title" (click)="alarm.Dropdown_active = !alarm.Dropdown_active">
       <span aria-hidden="true">&times;</span>
 
     </button>
@@ -80,36 +80,44 @@ dd {
    
     <dl>
       <dt>Name</dt>
-      <dd >Ahmed</dd>
+      <dd >{{alarm.Resident}}</dd>
     </dl>
     <hr style = "margin-top: 2px; margin-bottom: 2px; color: black;"/>
     <dl>
       <dt >Phone</dt>
-      <dd >0561247896</dd>
+      <dd >{{alarm.Phone_Number}}</dd>
     </dl>                      
     <hr style = "margin-top: 2px; margin-bottom: 2px; color: black;"/>
     <dl>
       <dt >Community Name</dt>
-      <dd >Zahra Villas</dd>
+      <dd >{{alarm.Community}}</dd>
     </dl>                      
     <hr style = "margin-top: 2px; margin-bottom: 2px; color: black;"/>
     <dl>
       <dt >Villa Number</dt>
-      <dd><span class = "text-info">10 </span></dd>
+      <dd><span class = "text-info">{{alarm.Villa_no}} </span></dd>
     </dl>
     <hr style = "margin-top: 2px; margin-bottom: 2px; color: black;"/>
 
    
-   
   </div>
+ 
   <div class="modal-footer">
-    <button type="button" class="btn btn-success" (click)="false_alarm()">False Alarm</button>
+    <button type="button" class="btn btn-success" (click)="false_alarm(alarm)">False Alarm</button>
     <button type="button" class="btn btn-info" (click)="call()">Call</button>
-    <button type="button" class="btn btn-danger" (click)="transfer()">Transfer</button>
+    <button type="button" class="btn btn-danger" (click)="transfer(alarm)">Transfer</button>
     
   </div>
+
+  <div class="modal-footer">
+    <button type="button" class="btn btn-info" (click)="show_on_map(alarm)" style="display: none;">Show on Map</button>        
+  </div>
+
+
   </div>
   </div>
   
+  
  
+
 

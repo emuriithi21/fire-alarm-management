@@ -2,12 +2,12 @@ import { Component, Input, OnInit } from '@angular/core';
 import {EventService, OperationService} from '@c8y/ngx-components/api';
 import { InventoryService } from '@c8y/ngx-components/api';
 import { AlarmService } from '@c8y/ngx-components/api'
-import { AlertService, sortByPriority } from '@c8y/ngx-components';
+import { AlertService, sortByPriority, Status } from '@c8y/ngx-components';
 import {Realtime} from '@c8y/ngx-components/api';
-import { IAlarm, IOperation } from '@c8y/client';
+import { IAlarm, IdReference, IOperation, IResultList,IManagedObject } from '@c8y/client';
 import { Severity } from '@c8y/client';
 import { AlarmStatus } from '@c8y/client';
-
+import {IActiveAlarm} from "./demo-widget-config.component";
 import { NgModule } from '@angular/core';
 import { expandFormat } from 'ngx-bootstrap/chronos/format';
 import { Alert } from '@c8y/ngx-components';
@@ -40,222 +40,294 @@ export class WidgetDemo implements OnInit {
     public acknowledged_ids: string[] = []
     public tracked_cleared_alarms: IAlarm[] = []
     public cleared_ids: string[] = []
-    public remaining_time: number = 180;
+    public remaining_time: number = 120;
     public remaining_time_string: string = "_:__";
     public active_alarm_id: string = null;
     public refreshintervalId: number = null;
-    public active_alarm : IAlarm = null;
-    public alarm_active : boolean = false;
+    public active_alarm : IAlarm = null;   
     public countdown_active: boolean = false;
     public dropdown_collapsed: boolean = true;
-    ngOnInit(): void {
-
+    public villas: IManagedObject[] = []
+    public num_villas: number = 6;    
+    public active_alarms :IActiveAlarm[] =[];
         
-
-        let last_day = new Date('23 January 2021 08:48 UTC').toISOString();
-        let today = new Date().toISOString();
+     
+    ngOnInit(): void {
+        
         const filter: object = {
-            severity: Severity.MAJOR,
             pageSize: 100,
-            dateFrom: last_day,
-            dateTo: today,
-            source: "14489852",          
             withTotalPages: true
-
+          };
             
+          const query = {
+            type: 'moro-villa*'
+        }
+         
+        
+        this.inventoryService.listQueryDevices(query, filter).then(data =>
+        
+        {
+
+            let devices :IResultList<IManagedObject> = data;
+
+            this.villas =  devices.data
+
+            console.log("Got the Villas ")
+
+           
+        });
+
+
+        let today = new Date();
+
+        let date_From = today.getTime() - 120000
+
+        let last_day = new Date('23 January 2022 08:48 UTC').toISOString();
+        const alarm_filter: object = {
+            severity: Severity.MAJOR,
+            pageSize: 100,            
+            type: "residential_alarm",         
+            status: AlarmStatus.ACTIVE
 
           };
 
-          (async () => {
-            const {data, res, paging} = await this.alarmservice.list(filter);
-            let alarm_data: IAlarm[] = data;
+          
+            console.log("Querying for alarms")
+            this.alarmservice.list(alarm_filter).then(data =>
+        
+            {
+            let query_result:IResultList<IAlarm> = data
+            let alarm_data = query_result.data
+            console.log("Got alarms of length: " + String(alarm_data.length))
             let i: number = 0;
             for (i = 0; i < alarm_data.length ; i++)
             {
                 let alarm: IAlarm = alarm_data[i]
 
-                if (alarm.status == AlarmStatus.ACTIVE)
+                if (alarm.status == AlarmStatus.ACTIVE  && alarm.type =="residential_alarm")
 
                 {    
                 let alarmTime: number = Math.floor(new Date(alarm.time).getTime()/1000);
-                let slaTime: number = alarmTime + 180;
+                let slaTime: number = alarmTime + 120;
                 let now: number = Math.floor(Date.now()/1000);
-                
+                console.log("Got Alarm for Device " + String(alarm.source.id)) 
     
-                    if (now > slaTime)
-    
-                    {
-                        this.clear_alarm(alarm)
-                    }
-                    else
-                    {
-                        this.active_alarm_id = alarm.id;
-                        this.active_alarm = alarm;
+                if (now > slaTime)
 
-                    }
-    
-                    //this.tracked_active_alarms.push(alarm);
-                    //this.active_ids.push(alarm.id)
-                }
-                else if (alarm.status == AlarmStatus.ACKNOWLEDGED)
                 {
-                    this.tracked_acknowledged_alarms.push(alarm); 
-                    this.acknowledged_ids.push(alarm.id)             }
+                    this.clear_alarm(alarm)
+                }
 
                 else
-                {
-
-                    this.tracked_cleared_alarms.push(alarm);
-                    this.cleared_ids.push(alarm.id)
-                }
-
-            }
-           
-            
-           if (this.active_alarm_id != null)
-
-           {
-            this.remaining_time_string = "_:__";
-            this.alarm_active = true;
-            let alarmTime: number = Math.floor(new Date(this.active_alarm.time).getTime()/1000);
-            let slaTime: number = alarmTime + 180;
-            let now: number = Math.floor(Date.now()/1000);
-                
-            this.remaining_time = slaTime-now-2
-          
-            this.countdown_active = true;            
-            this.refreshintervalId = window.setInterval(()=>{ 
+                    {
+                        console.log("Got Alarm for Device " + String(alarm.source.id))  
                     
-                if (this.remaining_time > 1)
-                {
+                        let alarmTime: number = Math.floor(new Date(alarm.time).getTime()/1000);
+                        let slaTime: number = alarmTime + 120;
+                        let now: number = Math.floor(Date.now()/1000);
+                        let remaining_time = slaTime-now-2
+                        let remaining_time_string = Math.floor(remaining_time / 60).toString() + ':' + (remaining_time % 60).toLocaleString('en-US', {
+                            minimumIntegerDigits: 2,
+                            useGrouping: false
+                        });
+                        
+                        this.villas.forEach(villa => {
 
-                this.remaining_time --;
+                        if (villa.id == alarm.source.id)
+                        
+                        {
+                            
+                            let act_alarm :IActiveAlarm={
+
+                                Name: villa.name,
+                                Resident: villa.Resident,  
+                                Community: villa.Community,          
+                                Villa_no: villa.villaNo,
+                                Timestamp: alarmTime,              
+                                Phone_Number: villa.phoneNumber,
+                                Makani: villa.Makani,
+                                Remaining_time: remaining_time,
+                                Remaining_time_string : remaining_time_string,
+                                Dropdown_active: false,
+                                Source : villa.id,                            
+                                Position:
+                                {
+                                    lat:  villa.c8y_Position.lat,
+                                    lng: villa.c8y_Position.lng
+                                },
+                                c8y_Alarm: alarm
+
+                                }
+                                let alarm_present_for_device = false
+                                this.active_alarms.forEach(active_alarm => {
+                                
+                                    if (active_alarm.Source == alarm.source.id)
+                                    
+                                    {
+                                        alarm_present_for_device = true
+                                        this.clear_alarm(alarm)
+                                    }
+                                });
+
+                                if(!alarm_present_for_device)
+                                {
+                                this.active_alarms.push(act_alarm)
+                                this.update_num_active_alarms()
+                                }
+
+                            
+                        }
+                        
+                    });
+                    
+
                     
 
                 }
-                
-                if (this.remaining_time == 1)
 
-                {
-                    this.remaining_time = 0; 
-                    this.transfer()
-                    this.countdown_active = false;
-                    clearInterval(this.refreshintervalId);
-                }
-                this.remaining_time_string = Math.floor(this.remaining_time / 60).toString() + ':' + (this.remaining_time % 60).toLocaleString('en-US', {
-                    minimumIntegerDigits: 2,
-                    useGrouping: false
-                  });
-                }, 1000);
+                    }
+    
+             
+
+            }        
             
 
-           }
-
-          })();
+        });
 
 
-          if (this.tracked_active_alarms.length > 1)
+        this.refreshintervalId = window.setInterval(()=>{ 
 
-           {
 
-            let i = 0
-
-            for (i = 0; i< this.tracked_active_alarms.length ; i++)
+            if (this.active_alarms.length > 0)
 
             {
-                let alarm = this.tracked_cleared_alarms[i]
+                console.log("Number of Active Alarms is: " + String(this.active_alarms.length))
 
-               
-
-            }
-
-           }
-
-        const alarm_subscription = this.realtime.subscribe('/alarms/14489852', (data ) => {
-            console.log(data.data.data); // logs all alarm CRUD changes
-            let alarm: IAlarm = data.data.data
-
-           
-            console.log(alarm.status)
-
-            console.log(alarm.id)
-
-            console.log(alarm.creationTime)
-
-            
-
-            
-            if (alarm.status == AlarmStatus.ACTIVE)
-
-            {   if (alarm.id != this.active_alarm_id)
-                {
-                this.remaining_time_string = "_:__";
-                this.alarm_active = true;
-                this.active_alarm = alarm
-                let alarmTime: number = Math.floor(new Date(alarm.time).getTime()/1000);
-                let slaTime: number = alarmTime + 180;
-                let now: number = Math.floor(Date.now()/1000);
-                console.log(now)
-                console.log(alarmTime)
-                this.remaining_time = slaTime-now-2
+                let i = 0;
+                this.active_alarms.forEach((alarm, index) => {
                 
-                this.countdown_active = true;
-                this.refreshintervalId = window.setInterval(()=>{ 
-                    
-                    if (this.remaining_time > 1)
+                   
+                    if (alarm.Remaining_time > 1)
                     {
 
-                    this.remaining_time --;
+                        alarm.Remaining_time --;
                         
 
                     }
-                    
-                    else if (this.remaining_time == 1)
+
+                    else if (alarm.Remaining_time == 1)
 
                     {
-                        this.remaining_time = 0; 
-                        this.transfer()
-                        this.countdown_active = false;
-                        clearInterval(this.refreshintervalId);
+                        alarm.Remaining_time = 0; 
+                        this.active_alarms.splice(index,1)
+                        this.update_num_active_alarms()
+                        this.transfer(alarm)
+                        //this.countdown_active = false;                        
 
                     }
-                    this.remaining_time_string = Math.floor(this.remaining_time / 60).toString() + ':' + (this.remaining_time % 60).toLocaleString('en-US', {
+
+                    alarm.Remaining_time_string = Math.floor(alarm.Remaining_time / 60).toString() + ':' + (alarm.Remaining_time % 60).toLocaleString('en-US', {
                         minimumIntegerDigits: 2,
                         useGrouping: false
                       });
-                    }, 1000);
 
+
+                });
                     
                 
+                
+            }
+                
+        }, 1000);
             
+        
+        let channel = '/alarms/*'  
+        const alarm_subscription = this.realtime.subscribe(channel, (data ) => {
+        console.log(data.data.data); // logs all alarm CRUD changes
+        let alarm: IAlarm = data.data.data
+
+            
+            if (alarm.status == AlarmStatus.ACTIVE)
+            {
+                if (alarm.type == "residential_alarm")
+                {
+                    console.log("Got Alarm for Device " + String(alarm.source.id))  
+                    
+                    let alarmTime: number = Math.floor(new Date(alarm.time).getTime()/1000);
+                    let slaTime: number = alarmTime + 120;
+                    let now: number = Math.floor(Date.now()/1000);
+                    let remaining_time = slaTime-now-2
+                    let remaining_time_string = Math.floor(remaining_time / 60).toString() + ':' + (remaining_time % 60).toLocaleString('en-US', {
+                        minimumIntegerDigits: 2,
+                        useGrouping: false
+                      });
+                    let alarm_source = alarm.source.id
+
+                    this.villas.forEach(villa => {
+
+                        if (villa.id == alarm.source.id)
+                        
+                        {
+                        
+                        let act_alarm :IActiveAlarm={
+
+                            Name: villa.name,  
+                            Resident: villa.Resident,
+                            Community: villa.Community,          
+                            Villa_no: villa.villaNo,
+                            Timestamp: alarmTime,              
+                            Phone_Number: villa.phoneNumber,
+                            Makani: villa.Makani,
+                            Remaining_time: remaining_time,
+                            Remaining_time_string : remaining_time_string,
+                            Dropdown_active: false,
+                            Source : villa.id,                            
+                            Position:
+                            {
+                                lat:  villa.c8y_Position.lat,
+                                lng: villa.c8y_Position.lng
+                            },
+                            c8y_Alarm: alarm
+
+                            }
+                            let alarm_present_for_device = false
+                            this.active_alarms.forEach(active_alarm => {
+                               
+                                if (active_alarm.Source == alarm.source.id)
+                                
+                                {
+                                    alarm_present_for_device = true
+                                    this.clear_alarm(alarm)
+                                }
+                            });
+
+                            if(!alarm_present_for_device)
+                            {
+                            this.active_alarms.push(act_alarm)
+                            this.update_num_active_alarms()
+                            }
+
+                            
+                        }
+                        
+                    });
+                    
+
+                    
 
                 }
             }
-
-            if (alarm.status == AlarmStatus.CLEARED  && (this.alarm_active))
-
-            {
-                this.alarm_active = false;
-
-            }
-
-
-          });
+                                      
+            });
 
           
-        
-    }
-  
+        }  
+    
 
 
-    transfer(): void
+    transfer(alarm: IActiveAlarm): void
 
-    {   if (this.countdown_active)
-        {
-            this.countdown_active = false;
-
-            clearInterval(this.refreshintervalId);
-        }
+    {  
         
         this.alert.add({
             text: 'Alarm Transferred Successfully',
@@ -264,28 +336,24 @@ export class WidgetDemo implements OnInit {
             detailedData: 'Alarm Trasferred Successfully to DCD Dispatch System'
           } as Alert);
           
-          setTimeout(()=>{ 
-            
-            this.dropdown_collapsed = true;
-            this.alarm_active = false;
-            
-            }, 1000);
-            
-        this.clear_alarm(this.active_alarm);
+          
+        this.remove_alarm(alarm)
+        this.clear_alarm(alarm.c8y_Alarm)
+        //this.clear_alarm(this.active_alarm);
 
         let dispatch_alarm: IAlarm ={
 
             severity: Severity.MAJOR,
             source: {
 
-                "id": "14636205"
+                "id": alarm.Source
             },
 
             time:  new Date().toISOString(),
 
             type: "dispatch_alarm",
 
-            text: "Fire Alarm on Zahra Villas No. 10"
+            text: "Fire Alarm Dispatched for " + String(alarm.Community) + " " + String(alarm.Villa_no)
 
 
         }
@@ -294,7 +362,7 @@ export class WidgetDemo implements OnInit {
         let transfer_event: IEvent = {
 
             source:{
-                id: "14489852"
+                id: alarm.Source
             },
             type: "FireAlarmEvent",
 
@@ -305,8 +373,7 @@ export class WidgetDemo implements OnInit {
 
             this.eventService.create(transfer_event);
 
-        
-
+      
         
     }
 
@@ -326,15 +393,10 @@ export class WidgetDemo implements OnInit {
     
  
 
-    false_alarm(): void
+    false_alarm(alarm:IActiveAlarm): void
     {   
         
-        if (this.countdown_active)
-        {
-            this.countdown_active = false;
-
-            clearInterval(this.refreshintervalId);
-        }
+      
 
         this.alert.add({
             text: 'False Alarm Cleared',
@@ -345,18 +407,18 @@ export class WidgetDemo implements OnInit {
           
           setTimeout(()=>{ 
             
-            this.dropdown_collapsed = true;
-            this.alarm_active = false;
+            this.remove_alarm(alarm)
             
-            }, 2007);
+            
+            }, 300);
            
 
-            this.clear_alarm(this.active_alarm)
+            this.clear_alarm(alarm.c8y_Alarm)
 
             let false_alarm_event: IEvent = {
 
                 source:{
-                    id: "14489852"
+                    id: alarm.Source
                 },
                 type: "FireAlarmEvent",
     
@@ -366,10 +428,27 @@ export class WidgetDemo implements OnInit {
             };
     
                 this.eventService.create(false_alarm_event);
-    
+
+                 
 
     }
 
+    remove_alarm(to_remove: IActiveAlarm): void
+
+    {   
+        this.active_alarms.forEach((alarm, index) => {
+
+        if (to_remove.c8y_Alarm.id == alarm.c8y_Alarm.id)
+
+        {
+
+            this.active_alarms.splice(index,1)
+            this.update_num_active_alarms()
+        }
+
+    });
+
+    }
 
 
 
@@ -378,7 +457,6 @@ export class WidgetDemo implements OnInit {
 
     {  
        
-     
         const partialUpdateObject: Partial<IAlarm> = {
             
             id: alarm.id,
@@ -411,6 +489,66 @@ export class WidgetDemo implements OnInit {
 
         this.alarmservice.update(partialUpdateObject)
        
+
+    }
+    show_on_map(alarm: IActiveAlarm)
+    {    
+        let source:ISource ={
+            id: '16997973'
+        }
+        const create_marker_event: IEvent = {
+            source: source,
+            text: 'Show Marker',
+            time: new Date().toISOString(),
+            type: 'add_marker',
+            device: alarm.Source,
+            position:{
+                lat: alarm.Position.lat,
+                lng:alarm.Position.lng
+            }
+
+          };
+         
+        this.eventService.create(create_marker_event)
+        console.log("Adding marker for Device ID " + alarm.Source)
+    }
+
+    remove_from_map(alarm: IActiveAlarm)
+    {   
+        
+        let source:ISource ={
+            id: '16997973'
+        }
+        const remove_marker_event: IEvent = {
+            source: source,
+            text: 'Remove Marker',
+            time: new Date().toISOString(),
+            type: 'remove_marker',
+            device: alarm.Source,
+            position:{
+                lat: alarm.Position.lat,
+                lng:alarm.Position.lng
+            }
+
+          };
+         
+        this.eventService.create(remove_marker_event)
+        console.log("Removing marker for Device ID " + alarm.Source)
+    }
+
+    update_num_active_alarms()
+
+    {   let source:ISource ={
+        id: '16997973'
+    }
+        let num_alarms_device:Partial<IManagedObject> =
+        {
+            id: source.id,
+            active_fire_alarms: this.active_alarms.length
+
+        }
+        this.inventoryService.update(num_alarms_device)
+
 
     }
     
