@@ -7,7 +7,8 @@ import {Realtime} from '@c8y/ngx-components/api';
 import { IAlarm, IdReference, IOperation, IResultList,IManagedObject } from '@c8y/client';
 import { Severity } from '@c8y/client';
 import { AlarmStatus } from '@c8y/client';
-import {IActiveAlarm} from "./demo-widget-config.component";
+import { IActiveAlarm } from './IActiveAlarm';
+//import {IActiveAlarm} from "./demo-widget-config.component";
 import { NgModule } from '@angular/core';
 import { expandFormat } from 'ngx-bootstrap/chronos/format';
 import { Alert } from '@c8y/ngx-components';
@@ -63,7 +64,7 @@ export class WidgetDemo implements OnInit {
             type: 'moro-villa*'
         }
          
-        
+        this.update_num_active_alarms()
         this.inventoryService.listQueryDevices(query, filter).then(data =>
         
         {
